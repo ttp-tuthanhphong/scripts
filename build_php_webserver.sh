@@ -142,3 +142,24 @@ doBuild() {
 # ========== CHẠY HÀM CHÍNH ==========
 doCheckVersionDA
 
+# Auto cleanup section
+echo "Starting cleanup process..."
+
+# List các folder cần xóa (thay đổi theo script thực tế)
+CLEANUP_DIRS=(
+    "/tmp/php_build"
+    "/tmp/apache_build" 
+    "~/Downloads/php_src"
+    "~/Downloads/apache_src"
+    "/tmp/build_*"
+)
+
+for dir in "${CLEANUP_DIRS[@]}"; do
+    if [ -d "$dir" ] || ls $dir 1> /dev/null 2>&1; then
+        echo "Removing: $dir"
+        rm -rf $dir
+    fi
+done
+
+echo "Cleanup completed!"
+
