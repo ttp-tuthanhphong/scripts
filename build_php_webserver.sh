@@ -175,13 +175,6 @@ checkSystemStatus() {
             ;;
     esac
     
-    # Kiểm tra disk space
-    echo -e "\n${GREEN}Dung lượng ổ đĩa:${NC}"
-    df -h / | grep -v Filesystem
-    
-    # Kiểm tra memory
-    echo -e "\n${GREEN}Bộ nhớ:${NC}"
-    free -h | grep -E "Mem|Swap"
 }
 
 # ========== HÀM KIỂM TRA PHP HIỆN TẠI ==========
