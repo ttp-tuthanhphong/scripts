@@ -103,6 +103,16 @@ changeWebServer() {
                 # Set webserver
                 echo -e "${YELLOW}Bước 1: Cập nhật cấu hình webserver...${NC}"
                 ./build set webserver "$new_webserver"
+				if [[ "$new_webserver" == "nginx_apache" ]]; then
+				echo -e "${YELLOW}Đang kiểm tra php1_mode...${NC}"
+				php_mode=$(grep ^php1_mode= "$custombuild/options.conf" | cut -d= -f2)
+
+					if [[ "$php_mode" == "lsphp" ]]; then
+					echo -e "${RED}Cảnh báo: php1_mode hiện tại là lsphp, không tương thích với nginx_apache nếu không có CloudLinux.${NC}"
+					echo -e "${YELLOW}Tự động đổi php1_mode sang php-fpm...${NC}"
+					./build set php1_mode php-fpm
+					fi
+				fi
                 if [[ $? -ne 0 ]]; then
                     echo -e "${RED}Lỗi: Không thể cập nhật cấu hình webserver${NC}"
                     return 1
