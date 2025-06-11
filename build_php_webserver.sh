@@ -306,9 +306,6 @@ changeWebServer() {
                 "openlitespeed")
                     systemctl restart lsws
                     systemctl enable lsws
-                    echo -e "${GREEN}OpenLiteSpeed Admin Panel: https://$(hostname -I | awk '{print $1}'):7080${NC}"
-                    echo -e "${GREEN}Default admin user: admin${NC}"
-                    echo -e "${GREEN}Default admin pass: 123456${NC}"
                     ;;
                 "nginx_apache")
                     systemctl restart nginx httpd
