@@ -9,7 +9,7 @@ curl -O https://raw.githubusercontent.com/ttp-tuthanhphong/scripts/main/build-ph
 
 ### Step 2: Kích hoạt alias
 ```bash
-source build-php.sh && rm -f build-php.sh
+source build-php.sh
 ```
 
 ### Step 3: Chạy script
@@ -21,6 +21,18 @@ build-php
 Kiểm tra log tại đường dẫn sau:
 ```bash
 tail -f /var/log/build_da.log
+```
+
+### Xóa hoàn toàn và làm sạch
+```bash
+# Xóa alias
+unalias build-php 2>/dev/null
+
+# Xóa script đã tải (nếu có)
+rm -f build-php.sh build_php_webserver.sh
+
+# Reload shell
+exec bash
 ```
 
 ## Lưu ý
