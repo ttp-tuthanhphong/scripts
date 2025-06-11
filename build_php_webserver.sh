@@ -77,18 +77,100 @@ changeWebServer() {
     echo -e "${NC}Y : YES"
     echo -e "${NC}N : NO"
     read -p "Lựa chọn của bạn: " opt_web
+    
     case $opt_web in
         YES|Y|y|yes)
-            read -p "Nhập webserver muốn sử dụng (vd: apache, nginx_apache, openlitespeed): " new_webserver
+            echo -e "${YELLOW}Các webserver hỗ trợ:${NC}"
+            echo -e "1. apache"
+            echo -e "2. nginx_apache" 
+            echo -e "3. openlitespeed"
+            read -p "Nhập webserver muốn sử dụng: " new_webserver
+            
             if [[ "$new_webserver" =~ ^(apache|nginx_apache|openlitespeed)$ ]]; then
                 echo -e "${YELLOW}Đang cập nhật webserver thành $new_webserver...${NC}"
+                
+                # Kiểm tra custombuild directory
+                if [[ ! -d "$custombuild" ]]; then
+                    echo -e "${RED}Lỗi: Không tìm thấy thư mục $custombuild${NC}"
+                    return 1
+                fi
+                
                 cd "$custombuild" || exit 1
-                ./build set webserver "$new_webserver"               
-                ./build "$new_webserver"
+                
+                # Backup current config
+                cp options.conf options.conf.backup.$(date +%Y%m%d_%H%M%S)
+                echo -e "${YELLOW}Đã backup file cấu hình hiện tại${NC}"
+                
+                # Set webserver
+                echo -e "${YELLOW}Bước 1: Cập nhật cấu hình webserver...${NC}"
+                ./build set webserver "$new_webserver"
+                if [[ $? -ne 0 ]]; then
+                    echo -e "${RED}Lỗi: Không thể cập nhật cấu hình webserver${NC}"
+                    return 1
+                fi
+                
+                # Update custombuild
+                echo -e "${YELLOW}Bước 2: Cập nhật custombuild...${NC}"
+                ./build update
+                if [[ $? -ne 0 ]]; then
+                    echo -e "${RED}Lỗi: Không thể cập nhật custombuild${NC}"
+                    return 1
+                fi
+                
+                # Build webserver với xử lý đặc biệt cho OpenLiteSpeed
+                if [[ "$new_webserver" == "openlitespeed" ]]; then
+                    echo -e "${YELLOW}Bước 3: Cài đặt OpenLiteSpeed (có thể mất vài phút)...${NC}"
+                    # Cài đặt dependencies cho OpenLiteSpeed
+                    yum install -y wget curl
+                    ./build openlitespeed
+                    if [[ $? -ne 0 ]]; then
+                        echo -e "${RED}Lỗi: Không thể cài đặt OpenLiteSpeed${NC}"
+                        echo -e "${YELLOW}Thử cài đặt thủ công...${NC}"
+                        ./build clean
+                        ./build openlitespeed
+                    fi
+                else
+                    echo -e "${YELLOW}Bước 3: Cài đặt $new_webserver...${NC}"
+                    ./build "$new_webserver"
+                    if [[ $? -ne 0 ]]; then
+                        echo -e "${RED}Lỗi: Không thể cài đặt $new_webserver${NC}"
+                        return 1
+                    fi
+                fi
+                
+                # Rewrite configs
+                echo -e "${YELLOW}Bước 4: Cập nhật cấu hình...${NC}"
                 ./build rewrite_confs
-                echo -e "${GREEN}Đã đổi webserver thành công.${NC}"
+                if [[ $? -ne 0 ]]; then
+                    echo -e "${RED}Cảnh báo: Có lỗi khi rewrite configs${NC}"
+                fi
+                
+                # Restart services
+                if [[ "$new_webserver" == "openlitespeed" ]]; then
+                    echo -e "${YELLOW}Bước 5: Khởi động lại OpenLiteSpeed...${NC}"
+                    systemctl restart lsws
+                    systemctl enable lsws
+                    echo -e "${GREEN}OpenLiteSpeed Admin Panel: https://$(hostname -I | awk '{print $1}'):7080${NC}"
+                    echo -e "${GREEN}Default admin user: admin${NC}"
+                    echo -e "${GREEN}Default admin pass: 123456${NC}"
+                else
+                    echo -e "${YELLOW}Bước 5: Khởi động lại services...${NC}"
+                    systemctl restart httpd
+                    if [[ "$new_webserver" == "nginx_apache" ]]; then
+                        systemctl restart nginx
+                    fi
+                fi
+                
+                echo -e "${GREEN}✅ Đã đổi webserver thành $new_webserver thành công!${NC}"
+                
+                # Verify installation
+                echo -e "${YELLOW}Kiểm tra trạng thái webserver:${NC}"
+                current_webserver_new=$(grep ^webserver= "$custombuild/options.conf" | cut -d= -f2)
+                echo -e "${GREEN}Webserver trong config: $current_webserver_new${NC}"
+                
             else
-                echo -e "${RED}Giá trị không hợp lệ. Thoát đổi webserver.${NC}"
+                echo -e "${RED}Giá trị không hợp lệ. Các tùy chọn: apache, nginx_apache, openlitespeed${NC}"
+                return 1
             fi
             ;;
         NO|N|no|n)
@@ -96,10 +178,10 @@ changeWebServer() {
             ;;
         *)
             echo -e "${RED}Lựa chọn không hợp lệ. Bỏ qua đổi webserver.${NC}"
+            return 1
             ;;
     esac
 }
-
 # ========== HÀM CẤU HÌNH VÀ BUILD PHP ==========
 doBuild() {
     cd "$custombuild" || exit 1
