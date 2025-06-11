@@ -84,9 +84,25 @@ changeWebServer() {
             echo -e "1. apache"
             echo -e "2. nginx_apache" 
             echo -e "3. openlitespeed"
-            read -p "Nhập webserver muốn sử dụng: " new_webserver
+            read -p "Chọn webserver (1/2/3): " webserver_choice
             
-            if [[ "$new_webserver" =~ ^(apache|nginx_apache|openlitespeed)$ ]]; then
+            case $webserver_choice in
+                1)
+                    new_webserver="apache"
+                    ;;
+                2)
+                    new_webserver="nginx_apache"
+                    ;;
+                3)
+                    new_webserver="openlitespeed"
+                    ;;
+                *)
+                    echo -e "${RED}Lựa chọn không hợp lệ. Vui lòng chọn 1, 2 hoặc 3.${NC}"
+                    return 1
+                    ;;
+            esac
+            
+            if [[ -n "$new_webserver" ]]; then
                 echo -e "${YELLOW}Đang cập nhật webserver thành $new_webserver...${NC}"
                 
                 # Kiểm tra custombuild directory
@@ -150,6 +166,9 @@ changeWebServer() {
                     echo -e "${YELLOW}Bước 5: Khởi động lại OpenLiteSpeed...${NC}"
                     systemctl restart lsws
                     systemctl enable lsws
+                    echo -e "${GREEN}OpenLiteSpeed Admin Panel: https://$(hostname -I | awk '{print $1}'):7080${NC}"
+                    echo -e "${GREEN}Default admin user: admin${NC}"
+                    echo -e "${GREEN}Default admin pass: 123456${NC}"
                 else
                     echo -e "${YELLOW}Bước 5: Khởi động lại services...${NC}"
                     systemctl restart httpd
