@@ -69,7 +69,6 @@ doCheckPHP() {
         echo "- $line"
     done
 }
-# ========== HÀM ĐỔI WEBSERVER ==========
 changeWebServer() {
     current_webserver=$(grep ^webserver= "$custombuild/options.conf" | cut -d= -f2)
     echo -e "${GREEN}Webserver hiện tại là: ${YELLOW}$current_webserver${NC}"
@@ -84,25 +83,9 @@ changeWebServer() {
             echo -e "1. apache"
             echo -e "2. nginx_apache" 
             echo -e "3. openlitespeed"
-            read -p "Chọn webserver (1/2/3): " webserver_choice
+            read -p "Nhập webserver muốn sử dụng: " new_webserver
             
-            case $webserver_choice in
-                1)
-                    new_webserver="apache"
-                    ;;
-                2)
-                    new_webserver="nginx_apache"
-                    ;;
-                3)
-                    new_webserver="openlitespeed"
-                    ;;
-                *)
-                    echo -e "${RED}Lựa chọn không hợp lệ. Vui lòng chọn 1, 2 hoặc 3.${NC}"
-                    return 1
-                    ;;
-            esac
-            
-            if [[ -n "$new_webserver" ]]; then
+            if [[ "$new_webserver" =~ ^(apache|nginx_apache|openlitespeed)$ ]]; then
                 echo -e "${YELLOW}Đang cập nhật webserver thành $new_webserver...${NC}"
                 
                 # Kiểm tra custombuild directory
